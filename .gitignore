@@ -216,3 +216,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Freddie Mac restricted and generated data
+data/raw/*
+data/interim/*
+data/processed/*
+*.zip
+*.parquet
+
+# Trained model files
+models/*
+*.joblib
+*.pkl
+
+# Keep folder placeholders
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!models/.gitkeep
