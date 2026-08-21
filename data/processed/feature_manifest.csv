@@ -1,0 +1,25 @@
+feature,feature_type,source_timing,transformation,model_use
+credit_score,numeric,Origination,Development-median imputation; missingness indicator retained,Predictor
+mi_percentage,numeric,Origination,Retained as disclosed,Predictor
+original_dti,numeric,Origination,Development-median imputation; missingness indicator retained,Predictor
+original_upb_log,numeric,Origination,Natural log of Original UPB plus one,Predictor
+original_ltv_capped_200,numeric,Origination,Original LTV capped at 200,Predictor
+original_cltv_capped_200,numeric,Origination,Original CLTV capped at 200,Predictor
+original_interest_rate,numeric,Origination,Retained as disclosed,Predictor
+original_loan_term,numeric,Origination,Retained as disclosed,Predictor
+number_of_borrowers,numeric,Origination,Retained as disclosed,Predictor
+credit_score_missing,numeric,Origination,Binary source-missingness indicator,Predictor
+original_dti_missing,numeric,Origination,Binary source-missingness indicator,Predictor
+original_ltv_missing,numeric,Origination,Binary source-missingness indicator,Predictor
+original_cltv_missing,numeric,Origination,Binary source-missingness indicator,Predictor
+original_ltv_above_100,numeric,Origination,Binary high-LTV indicator,Predictor
+original_cltv_above_100,numeric,Origination,Binary high-CLTV indicator,Predictor
+first_time_homebuyer_indicator,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+number_of_units,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+occupancy_status,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+channel,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+property_state,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+property_type,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+loan_purpose,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+super_conforming_flag,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor
+harp_indicator,categorical,Origination,Development-fitted imputation and one-hot encoding,Predictor

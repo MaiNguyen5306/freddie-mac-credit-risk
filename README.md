@@ -165,10 +165,6 @@ The testing work demonstrates population reconciliation, test execution, evidenc
 freddie-mac-credit-risk/
 ├── data/
 │   └── processed/
-│       ├── originations_clean.parquet
-│       ├── loan_outcomes.parquet
-│       ├── modeling_dataset.parquet
-│       ├── pd_predictions.parquet
 │       ├── feature_manifest.csv
 │       ├── model_performance_summary.csv
 │       ├── model_decile_analysis.csv
@@ -185,8 +181,6 @@ freddie-mac-credit-risk/
 │       ├── 07_pd_model_testing_workpaper.md
 │       ├── risk_control_matrix.xlsx
 │       └── exception_log.xlsx
-├── models/
-│   └── baseline_pd_logistic.joblib
 ├── notebooks/
 │   ├── 01_data_audit.ipynb
 │   ├── 02_performance_audit.ipynb
