@@ -1,36 +1,94 @@
-# Freddie Mac Credit Risk: PD Modeling and Independent Testing
+# Freddie Mac Credit Risk: Probability of Default Modeling and Independent Testing
 
-An end-to-end credit-risk analytics project using Freddie Mac Single-Family Loan-Level sample data to construct loan outcomes, develop an explainable probability-of-default model, and demonstrate Enterprise Independent Testing practices.
+This project uses Freddie Mac Single-Family Loan-Level sample data to estimate the probability that a mortgage will experience a serious payment failure within its first 24 months. For this analysis, **default** is operationally defined as a loan becoming at least three monthly payments past due or entering **real-estate-owned (REO)** status, meaning the lender or mortgage investor has taken ownership of the property after foreclosure.
 
-The project combines data validation, process and control analysis, exception management, reproducible testing, feature-leakage controls, model evaluation, and documented workpapers.
+The model uses only information available when the loan was originated, such as credit score, debt-to-income ratio, loan-to-value ratio, interest rate, loan amount, and property characteristics.
+
+The project also simulates **Enterprise Independent Testing (EIT)** work by checking whether the source data, default calculations, model inputs, testing populations, and reported results are complete, accurate, and reproducible.
+
+## What Does the Model Predict?
+
+Each eligible loan has an observed 24-month outcome:
+
+* `1` means the loan defaulted within 24 months.
+* `0` means the loan completed the 24-month observation period without defaulting.
+
+The logistic regression model learns patterns from these historical outcomes. Instead of returning only `0` or `1`, it produces a **Probability of Default (PD)** for each loan.
+
+For example, a predicted PD of `0.03` means the model estimates a 3% probability that the loan will default within 24 months. A higher PD indicates greater estimated risk, but it does not guarantee that the loan will default.
 
 ## Project Objective
 
-The project addresses two related questions:
+The project addresses two questions:
 
-1. Can origination information identify loans with elevated 24-month default risk?
-2. Can the underlying data, outcomes, controls, and reported model results be independently tested and reconciled?
+1. Can origination information identify and rank loans with elevated 24-month default risk?
+2. Can an independent tester reproduce the data populations, default outcomes, model results, and reported conclusions?
 
-A default is defined as a loan reaching delinquency status `03` or greater, or real-estate-owned status `RA`, within the first 24 monthly reporting periods following the original first payment date.
+For this project, a default occurs when a loan:
+
+* reaches delinquency status `03` or greater, meaning it is at least three monthly payments past due; or
+* reaches real-estate-owned status `RA`;
+
+within the first 24 monthly reporting periods after the original first payment date.
+
 
 ## Data Scope
 
-The analysis uses Freddie Mac Single-Family Loan-Level sample files for four vintages:
+The project uses Freddie Mac Single-Family Loan-Level sample data. A **vintage** is the year in which a group of mortgage loans was originated.
 
-* 2006: historical comparison
-* 2015: initial model training
-* 2016: internal validation
-* 2017: independent later-vintage testing
+Four vintages were selected for different analytical purposes:
 
-The validated population contains:
+* **2006 — historical comparison:** Used to examine how the final model behaves on loans from an older and economically different period.
+* **2015 — initial model training:** Used to train the first version of the model.
+* **2016 — development-stage validation:** Used to evaluate the first version on newer, unseen data while the methodology was still being developed.
+* **2017 — independent later-vintage test:** Kept out of model development and used as the final test of the completed model.
 
-* 200,000 unique originated loans
-* 12,850,534 monthly performance records
-* 162,006 loans eligible for 24-month model evaluation
-* 33 cleaned origination fields
-* 35 monthly performance fields
+All four vintages were audited for data quality before modeling. The first model was built using 2015 loans and checked using 2016 loans. We then combined 2015 and 2016 to build the final model and checked it using 2017 loans. The 2017 outcomes were used only to evaluate the completed model, not to teach the model how to make predictions.
 
-Raw source files are not included in the repository because of their size and source-access requirements.
+### Source Data Structure
+
+The source data contains two main types of records:
+
+* **Origination records:** One record per loan containing information known when the mortgage began, such as credit score, original balance, interest rate, loan-to-value ratio, and property characteristics.
+* **Monthly performance records:** Repeated records showing what happened to each loan over time, including payment status, delinquency, remaining balance, modification information, payoff, and foreclosure-related outcomes.
+
+### Validated Populations
+
+The validated source data contains:
+
+- 200,000 unique originated loans;
+- 12,850,534 monthly performance records;
+- 33 cleaned origination fields;
+- 35 monthly performance fields.
+
+After applying the 24-month outcome requirements, 162,006 loans were eligible for model development or evaluation. The other loans were excluded because they did not default and did not have enough monthly history to confirm a complete 24-month nondefault outcome.
+
+The population and data-quality results can be reviewed in:
+
+- [`01_data_audit.ipynb`](notebooks/01_data_audit.ipynb) — origination cleaning and validation;
+- [`02_performance_audit.ipynb`](notebooks/02_performance_audit.ipynb) — monthly performance validation;
+- [`03_outcome_construction.ipynb`](notebooks/03_outcome_construction.ipynb) — default, eligibility, and censoring calculations.
+
+### Why Use a 24-Month Outcome?
+
+The project constructed 12-, 24-, and 36-month outcomes and selected 24 months as the primary modeling period. This is a project design choice, not a universal definition.
+
+A 12-month period may be too short to observe enough defaults, while a 36-month period requires more performance history and leaves fewer loans with complete observation periods. The 24-month period provides a practical balance between allowing time for defaults to occur and retaining enough eligible loans for modeling and testing.
+
+### Class Imbalance
+
+In classification, a **class** is one possible outcome category. In this project, class `1` represents default and class `0` represents nondefault. The dataset is **class imbalanced** because nondefaults appear much more frequently than defaults.
+
+| Model population           | Defaults | Nondefaults | Default rate |             Approximate ratio |
+| -------------------------- | -------: | ----------: | -----------: | ----------------------------: |
+| 2015–2016 development      |      583 |      81,804 |       0.708% | 1 default per 140 nondefaults |
+| 2017 final test            |      397 |      41,667 |       0.944% | 1 default per 105 nondefaults |
+| 2006 historical comparison |      967 |      36,588 |       2.575% |  1 default per 38 nondefaults |
+
+Because the outcome is imbalanced, ordinary accuracy can be misleading. A model could classify nearly every loan as a nondefault and appear highly accurate while failing to identify most actual defaults. For this reason, the project evaluates probability quality and risk ranking using ROC AUC, average precision, Brier score, lift, and default capture rather than relying only on accuracy.
+
+Raw source files and loan-level processed outputs are not included in the repository because of their size and source-access requirements.
+
 
 ## Analytical Workflow
 
