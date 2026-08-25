@@ -1,5 +1,7 @@
 # Freddie Mac Credit Risk: Probability of Default Modeling and Independent Testing
 
+**Freddie Mac**, formally known as the Federal Home Loan Mortgage Corporation, is a U.S. government-sponsored enterprise that purchases mortgages from lenders and helps support the availability of mortgage funding. Borrowers generally receive their loans from banks or other lenders rather than directly from Freddie Mac.
+
 This project uses Freddie Mac Single-Family Loan-Level sample data to estimate the probability that a mortgage will experience a serious payment failure within its first 24 months. For this analysis, **default** is operationally defined as a loan becoming at least three monthly payments past due or entering **real-estate-owned (REO)** status, meaning the lender or mortgage investor has taken ownership of the property after foreclosure.
 
 The model uses only information available when the loan was originated, such as credit score, debt-to-income ratio, loan-to-value ratio, interest rate, loan amount, and property characteristics.
@@ -84,6 +86,27 @@ In classification, a **class** is one possible outcome category. In this project
 | 2015–2016 development      |      583 |      81,804 |       0.708% | 1 default per 140 nondefaults |
 | 2017 final test            |      397 |      41,667 |       0.944% | 1 default per 105 nondefaults |
 | 2006 historical comparison |      967 |      36,588 |       2.575% |  1 default per 38 nondefaults |
+
+<details>
+<summary><strong>How were the default rates and ratios calculated?</strong></summary>
+
+The default rate is calculated as:
+
+`Defaults ÷ (Defaults + Nondefaults) × 100`
+
+The approximate ratio is calculated as:
+
+`Nondefaults ÷ Defaults`
+
+Calculations by population:
+
+- **2015–2016 development:** `81,804 ÷ 583 = 140.32`, or approximately 1 default per 140 nondefaults.
+- **2017 final test:** `41,667 ÷ 397 = 104.95`, or approximately 1 default per 105 nondefaults.
+- **2006 historical comparison:** `36,588 ÷ 967 = 37.84`, or approximately 1 default per 38 nondefaults.
+
+The ratios are rounded to the nearest whole number for easier interpretation.
+
+</details>
 
 Because the outcome is imbalanced, ordinary accuracy can be misleading. A model could classify nearly every loan as a nondefault and appear highly accurate while failing to identify most actual defaults. For this reason, the project evaluates probability quality and risk ranking using ROC AUC, average precision, Brier score, lift, and default capture rather than relying only on accuracy.
 
