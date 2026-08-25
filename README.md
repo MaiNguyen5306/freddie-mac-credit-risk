@@ -145,49 +145,132 @@ Raw source files and loan-level processed outputs are not included in the reposi
 
 ## Analytical Workflow
 
+The project follows the loan data from its original files to a tested probability-of-default model. Each stage answers a different question and produces evidence that another person can review.
+
 ### 1. Origination Data Audit
 
-The origination audit validates:
+**Purpose:** Confirm that the information recorded when each mortgage began is complete, consistently structured, and suitable for later analysis.
 
-* expected files and schemas;
-* row and column counts;
-* unique loan identifiers;
-* duplicate and missing identifiers;
-* missingness by vintage;
-* numeric ranges and extreme ratios;
-* disclosed categorical values;
-* output-file reconciliation.
+Origination information includes characteristics such as credit score, original loan balance, interest rate, loan term, property information, and borrower information. Because these fields later become potential model inputs, errors at this stage could affect every subsequent result.
 
-The audit produced 200,000 unique loan records with no duplicate or missing loan identifiers.
+The audit checked:
 
-Three unusually high LTV or CLTV records were reviewed and determined to be internally consistent HARP-related loans. They were retained and flagged rather than automatically removed.
+- whether the expected files, columns, row counts, and field counts were present;
+- whether loan identifiers were unique, complete, and free of duplicates;
+- how missing values differed across vintages;
+- whether numeric ranges, extreme values, and categorical codes were reasonable;
+- whether the cleaned output reconciled to the original source population.
+
+The audit confirmed 200,000 unique originated loans with no missing or duplicated loan identifiers.
+
+Three loans had unusually high loan-to-value or combined loan-to-value ratios. These records were investigated rather than automatically deleted. The values were internally consistent with loans associated with the **Home Affordable Refinance Program (HARP)**, a program that allowed some borrowers with limited or negative home equity to refinance. The records were therefore retained and marked for review.
+
+Supporting evidence:
+
+* [`01_data_audit.ipynb`](notebooks/01_data_audit.ipynb) — data cleaning, profiling, and validation code;
+* [`03_origination_testing_workpaper.md`](docs/eit/03_origination_testing_workpaper.md) — testing procedures, evidence, and conclusions.
+
+<details>
+<summary><strong>Key terms used in this audit</strong></summary>
+
+* **Schema:** The expected structure of a dataset, including its column names, order, and data types.
+* **Loan identifier:** A value used to distinguish one loan from every other loan.
+* **Categorical field:** A field containing named groups or codes, such as property type, occupancy status, or loan purpose.
+* **Loan-to-value (LTV):** Original loan balance divided by the property value. A higher ratio means the loan amount is large relative to the property value.
+* **Combined loan-to-value (CLTV):** Total mortgage debt secured by the property divided by the property value.
+* **Reconciliation:** Confirming that records and totals remain consistent between the source data and the cleaned output.
+
+</details>
+
 
 ### 2. Monthly Performance Audit
 
-The performance audit processes the large raw files in memory-conscious chunks and validates:
+**Purpose:** Confirm that the monthly records accurately track what happened to each loan after origination and connect back to the correct origination record.
 
-* referential integrity against the origination population;
-* unique loan-month combinations;
-* reporting-period formats and sequence;
-* delinquency, modification, and zero-balance codes;
-* balance and maturity fields;
-* population totals by vintage.
+Unlike the origination data, which contains one row per loan, the performance data contains one row for each month a loan was observed. A single loan can therefore have many monthly records.
 
-All 12,850,534 performance records reconciled to the origination population, with zero unmatched loan identifiers, duplicate loan-months, or invalid reporting-period formats.
+Because the performance files contain more than 12.8 million records, they were processed in chunks of 100,000 rows. This allowed the full population to be tested without loading every record into the laptop’s memory at once.
 
-Testing identified one isolated remaining-maturity discrepancy affecting 37 records and one modified record that could not be independently recalculated because the modified maturity date was unavailable. Both items were quantified and documented in the exception log.
+The audit checked:
+
+- whether every monthly record matched a loan in the origination population;
+- whether each loan-month combination was unique and ordered correctly;
+- whether reporting periods, delinquency statuses, modification flags, and loan-ending codes were valid;
+- whether balance, loan-age, and remaining-maturity values were reasonable;
+- whether record counts and loan counts reconciled across vintages.
+
+All 12,850,534 monthly records matched the origination population. Testing found no missing or unmatched loan identifiers, duplicate loan-month records, invalid reporting-period formats, or ordering violations.
+
+Testing identified two limited issues:
+
+1. One loan contained 37 records where the reported remaining maturity differed from the independently calculated value.
+2. One modified loan record could not be independently recalculated because the data did not provide the revised maturity date.
+
+The affected records were quantified and documented in the exception log. They did not change the overall population conclusions or the primary default-outcome results.
+
+Supporting evidence:
+
+- [`02_performance_audit.ipynb`](notebooks/02_performance_audit.ipynb) — full-population monthly performance testing;
+- [`04_performance_testing_workpaper.md`](docs/eit/04_performance_testing_workpaper.md) — testing procedures, exceptions, and conclusions;
+- [`exception_log.xlsx`](docs/eit/exception_log.xlsx) — documented issues and closure evidence.
+
+<details>
+<summary><strong>Key terms used in this audit</strong></summary>
+
+- **Loan-month:** One monthly observation for one loan.
+- **Reporting period:** The year and month represented by a monthly performance record.
+- **Referential integrity:** Confirmation that every performance loan identifier exists in the origination population.
+- **Modification flag:** An indicator showing whether the original loan terms were changed after origination.
+- **Loan-ending code:** A code showing why a loan stopped appearing in the monthly data, such as payoff, property sale, or foreclosure-related resolution.
+- **Remaining maturity:** The estimated number of months left before the mortgage reaches its scheduled maturity date.
+
+</details>
 
 ### 3. Outcome Construction and Testing
 
-The project constructs 12-, 24-, and 36-month outcomes while distinguishing between:
+**Purpose:** Convert the monthly performance history into a clear outcome showing whether each loan defaulted within 12, 24, or 36 months.
 
-* observed defaults;
-* eligible nondefaults with complete observation windows;
-* censored loans without complete observation windows.
+The source data does not provide one ready-to-use field that directly answers whether a loan defaulted within a selected period. The outcome therefore had to be calculated by reviewing each loan’s monthly delinquency and REO history.
 
-The 24-month outcome was independently reperformed for a stratified sample of 120 loans covering 6,791 raw performance records.
+For each outcome period, loans were classified as:
 
-All 120 independent checks agreed with the constructed outcomes, eligibility indicators, observed-month calculations, and censoring classifications.
+- **Default:** The loan reached delinquency status `03` or greater, or entered REO status, during the selected period.
+- **Eligible nondefault:** The loan completed the full observation period without an identified default.
+- **Censored:** The loan did not have an observed default but also did not have enough monthly history to confirm a complete nondefault period.
+
+Censored loans were excluded from the corresponding model population because their final outcome could not be confirmed. For example, a loan observed for only 15 months cannot be confidently classified as a 24-month nondefault.
+
+The project created 12-, 24-, and 36-month outcomes for all 200,000 loans. The 24-month outcome was selected as the primary model target, resulting in 162,006 eligible loans.
+
+### Independent Outcome Check
+
+A stratified sample of 120 loans was selected across the four vintages. Their outcomes were independently recalculated from 6,791 raw monthly performance records and compared with the constructed outcome file.
+
+All 120 sampled loans matched for:
+
+- number of observed months;
+- 24-month default or nondefault outcome;
+- whether the loan had enough information to be included in the 24-month model population;
+- whether an incomplete loan was correctly classified as censored.
+
+This provided evidence that the outcome-construction rules were applied consistently.
+
+Supporting evidence:
+
+- [`03_outcome_construction.ipynb`](notebooks/03_outcome_construction.ipynb) — outcome construction, reconciliation, and independent sample testing;
+- [`05_outcome_testing_workpaper.md`](docs/eit/05_outcome_testing_workpaper.md) — testing procedures, results, and conclusions.
+
+<details>
+<summary><strong>Key terms used in outcome construction</strong></summary>
+
+- **Outcome:** The result the model is intended to predict.
+- **Observation period:** The amount of time during which a loan’s performance is evaluated.
+- **Eligible loan:** A loan with enough information to assign a confirmed outcome.
+- **Censored loan:** A loan whose complete nondefault outcome cannot be confirmed because its observation history ends too early.
+- **Stratified sample:** A sample selected from multiple defined groups—in this case, the different loan vintages.
+- **Independent recalculation:** Repeating a calculation separately from the original output and comparing the two results.
+
+</details>
 
 ### 4. Feature Engineering and Leakage Controls
 
