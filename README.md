@@ -77,6 +77,21 @@ The project constructed 12-, 24-, and 36-month outcomes and selected 24 months a
 
 A 12-month period may be too short to observe enough defaults, while a 36-month period requires more performance history and leaves fewer loans with complete observation periods. The 24-month period provides a practical balance between allowing time for defaults to occur and retaining enough eligible loans for modeling and testing.
 
+<details>
+<summary><strong>Compare the 12-, 24-, and 36-month outcomes</strong></summary>
+
+| Outcome period | Eligible loans | Censored loans | Observed defaults |
+|---|---:|---:|---:|
+| 12 months | 179,108 | 20,892 | 579 |
+| 24 months | 162,006 | 37,994 | 1,947 |
+| 36 months | 138,440 | 61,560 | 5,133 |
+
+The 12-month period retains more eligible loans but captures fewer defaults. The 36-month period captures more defaults but excludes more loans because they lack a complete observation period. The 24-month period provides a middle ground between event capture and population retention.
+
+These results were constructed and validated in [`03_outcome_construction.ipynb`](notebooks/03_outcome_construction.ipynb).
+
+</details>
+
 ### Class Imbalance
 
 In classification, a **class** is one possible outcome category. In this project, class `1` represents default and class `0` represents nondefault. The dataset is **class imbalanced** because nondefaults appear much more frequently than defaults.
@@ -109,6 +124,21 @@ The ratios are rounded to the nearest whole number for easier interpretation.
 </details>
 
 Because the outcome is imbalanced, ordinary accuracy can be misleading. A model could classify nearly every loan as a nondefault and appear highly accurate while failing to identify most actual defaults. For this reason, the project evaluates probability quality and risk ranking using ROC AUC, average precision, Brier score, lift, and default capture rather than relying only on accuracy.
+
+<details>
+<summary><strong>What do the model-evaluation measures mean?</strong></summary>
+
+| Measure | Question answered | Interpretation |
+|---|---|---|
+| **ROC AUC** | Does the model rank defaulted loans above nondefaulted loans? | `0.50` represents random ranking and `1.00` represents perfect ranking. Higher is better. |
+| **Average precision** | Can the model find rare defaults without flagging too many nondefaults? | Summarizes precision and recall across multiple risk cutoffs. Higher is better. |
+| **Brier score** | Are the predicted probabilities close to the actual outcomes? | Measures probability error. `0` is perfect, so lower is better. |
+| **Lift** | How much riskier is the selected high-risk group than the full population? | A lift above `1.0` indicates that the model concentrates more defaults than random selection. |
+| **Default capture** | What share of all defaults appears in the selected high-risk group? | Higher capture means more defaults are identified within the selected group. |
+
+No single measure provides a complete evaluation. The project uses these measures together to examine risk ranking, rare-event detection, probability quality, and concentration of defaults.
+
+</details>
 
 Raw source files and loan-level processed outputs are not included in the repository because of their size and source-access requirements.
 
